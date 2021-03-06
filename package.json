@@ -7,7 +7,8 @@
     "start": "npx ts-node index.ts"
   },
   "devDependencies": {
-    "@types/node": "^14.14.31"
+    "@types/node": "^14.14.31",
+    "@types/yargs": "^16.0.0"
   },
   "dependencies": {
     "chalk": "^4.1.0",
@@ -15,6 +16,7 @@
     "got": "^11.8.2",
     "inquirer": "^8.0.0",
     "terminal-image": "^1.2.1",
-    "terminal-link": "^2.1.1"
+    "terminal-link": "^2.1.1",
+    "yargs": "^16.2.0"
   }
 }

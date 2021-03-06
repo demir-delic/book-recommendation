@@ -7,11 +7,33 @@ const terminalImage = require("terminal-image");
 const terminalLink = require("terminal-link");
 const got = require("got");
 const chalk = require("chalk");
-var inquirer = require("inquirer");
+const inquirer = require("inquirer");
 
-const wordList = fs.readFileSync("10000-common-english-words.txt", "utf8").toString().split("\n");
+var argv = require("yargs/yargs")(process.argv.slice(2))
+  .usage("Usage: npx ts-node $0 <command> [options]")
+  .options({
+    r: {
+      alias: "retry",
+      description: "Automatically retry search until a match is found",
+      type: "boolean",
+    },
+    q: {
+      alias: "query",
+      description:
+        "Specify a word to search for instead having a word picked from a list at random",
+      type: "string",
+      nargs: 1,
+    },
+  })
+  .help("h")
+  .alias("h", "help").argv;
+
+if (!argv.query) {
+  var wordList = fs.readFileSync("10000-common-english-words.txt", "utf8").toString().split("\n");
+}
 // console.log(wordList);
 const isVolumeDetailOptional = false;
+let hasRetryStarted = false;
 
 const randomArrayElement = <T>(array: T[]): T => {
   return array[Math.floor(Math.random() * array.length)];
@@ -50,32 +72,42 @@ const main = () => {
       });
 
       if (!volumes?.length) {
-        inquirer
-          .prompt([
-            {
-              type: "input",
-              message: "No matches were found. Search again? (y/n)",
-              name: "search_again",
-            },
-          ])
-          .then((answer) => {
-            if (answer.search_again === "n" || answer === "no") {
-              return 1;
-            } else {
-              console.log("Searching...");
-              req.end();
-              main();
-            }
-          })
-          .catch((error) => {
-            if (error.isTtyError) {
-              // Prompt couldn't be rendered in the current environment
-              console.error(error);
-            } else {
-              // Something else went wrong
-              console.error("not ttyerror", error);
-            }
-          });
+        if (argv.retry) {
+          if (!hasRetryStarted) {
+            process.stdout.write("Searching");
+            hasRetryStarted = true;
+          }
+          process.stdout.write(".");
+          req.end();
+          main();
+        } else {
+          inquirer
+            .prompt([
+              {
+                type: "input",
+                message: "No matches were found. Search again? (y/n)",
+                name: "search_again",
+              },
+            ])
+            .then((answer) => {
+              if (answer.search_again === "n" || answer === "no") {
+                return 1;
+              } else {
+                console.log("Searching...");
+                req.end();
+                main();
+              }
+            })
+            .catch((error) => {
+              if (error.isTtyError) {
+                // Prompt couldn't be rendered in the current environment
+                console.error(error);
+              } else {
+                // Something else went wrong
+                console.error("not ttyerror", error);
+              }
+            });
+        }
       } else {
         removeEmptyProps(volumes);
         const chosenVolume = randomArrayElement(volumes);
@@ -94,7 +126,7 @@ const main = () => {
 function getRequestOptions(wList) {
   const GOOGLE_BOOKS_API_KEY = process.env.GOOGLE_BOOKS_API_KEY;
   const BASE_URL = "https://www.googleapis.com/books/v1/volumes";
-  const randomWord = randomArrayElement(wList);
+  const chosenWord = argv.query || randomArrayElement(wList);
 
   const queryParams = {
     // filter: "full",
@@ -102,7 +134,7 @@ function getRequestOptions(wList) {
     // projection: "lite",
     langRestrict: "en",
     maxResults: 40,
-    q: randomWord, // full-text query string
+    q: chosenWord, // full-text query string
   };
 
   let query = "";
