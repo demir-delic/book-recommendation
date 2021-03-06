@@ -12,9 +12,14 @@ const inquirer = require("inquirer");
 var argv = require("yargs/yargs")(process.argv.slice(2))
   .usage("Usage: npx ts-node $0 <command> [options]")
   .options({
-    r: {
-      alias: "retry",
-      description: "Automatically retry search until a match is found",
+    l: {
+      alias: "lowdetail",
+      description: "Don't require a recommended book to include a description and download link",
+      type: "boolean",
+    },
+    n: {
+      alias: "noimage",
+      description: "Don't display a recommended book's cover image",
       type: "boolean",
     },
     q: {
@@ -24,6 +29,11 @@ var argv = require("yargs/yargs")(process.argv.slice(2))
       type: "string",
       nargs: 1,
     },
+    r: {
+      alias: "retry",
+      description: "Automatically retry search until a match is found",
+      type: "boolean",
+    },
   })
   .help("h")
   .alias("h", "help").argv;
@@ -32,7 +42,7 @@ if (!argv.query) {
   var wordList = fs.readFileSync("10000-common-english-words.txt", "utf8").toString().split("\n");
 }
 // console.log(wordList);
-const isVolumeDetailOptional = false;
+const isVolumeDetailOptional = argv.lowdetail ? true : false;
 let hasRetryStarted = false;
 const MAX_API_CALLS = 10;
 let countApiCalls = 0;
@@ -56,7 +66,7 @@ const main = () => {
     });
     res.on("end", () => {
       const parsedData = JSON.parse(data);
-      // console.log(parsedData);
+      // console.log(JSON.stringify(parsedData, null, 2));
 
       let volumes = [];
 
@@ -138,7 +148,7 @@ function getRequestOptions(wList) {
   const queryParams = {
     // filter: "full",
     printType: "books",
-    // projection: "lite",
+    projection: "lite",
     langRestrict: "en",
     maxResults: 40,
     q: chosenWord, // full-text query string
@@ -186,11 +196,12 @@ const printOutput = (volume) => {
     }
 `
   );
-
-  (async () => {
-    const body = await got(volume.image).buffer();
-    console.log(await terminalImage.buffer(body, { width: "30%", height: "30%" }));
-  })();
+  if (!argv.noimage) {
+    (async () => {
+      const body = await got(volume.image).buffer();
+      console.log(await terminalImage.buffer(body, { width: "30%", height: "30%" }));
+    })();
+  }
 };
 
 main();
