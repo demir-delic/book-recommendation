@@ -34,12 +34,19 @@ if (!argv.query) {
 // console.log(wordList);
 const isVolumeDetailOptional = false;
 let hasRetryStarted = false;
+const MAX_API_CALLS = 10;
+let countApiCalls = 0;
 
 const randomArrayElement = <T>(array: T[]): T => {
   return array[Math.floor(Math.random() * array.length)];
 };
 
 const main = () => {
+  ++countApiCalls;
+  if (countApiCalls >= MAX_API_CALLS) {
+    console.log("Sorry, we couldn't find a match.");
+    return 1;
+  }
   const req = https.request(getRequestOptions(wordList), (res) => {
     // console.log(`statusCode: ${res.statusCode}`);
 
