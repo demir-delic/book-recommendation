@@ -1,0 +1,19 @@
+{
+  "name": "book-recommendation",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "license": "MIT",
+  "scripts": {
+    "start": "npx ts-node index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^14.14.31"
+  },
+  "dependencies": {
+    "chalk": "^4.1.0",
+    "dotenv": "^8.2.0",
+    "got": "^11.8.2",
+    "terminal-image": "^1.2.1",
+    "terminal-link": "^2.1.1"
+  }
+}
