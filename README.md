@@ -11,17 +11,13 @@ Get random book recommendations from the comfort of your terminal. If you like a
 **Prerequisites:**
 
 - A free Google Books API key. Refer to the following documentation to obtain a key: https://developers.google.com/books/docs/v1/using#APIKey. The process takes less than 5 minutes with an existing Google account.
-- [Node.js (v12 or above)](https://nodejs.org), [Yarn 2](https://yarnpkg.com/getting-started), and a terminal emulator such as [iTerm2](https://iterm2.com).
+- [Node.js](https://nodejs.org) (v12 or above), [Yarn 2](https://yarnpkg.com/getting-started), and a terminal emulator such as [iTerm2](https://iterm2.com).
 
-After sorting out the prerequisites, clone this repository and run the following:
+---
 
-```shell
-yarn install
-```
+After preparing the prerequisites, clone this repository. Next, create a `.env` file at the project root and add your API key in the following format: `GOOGLE_BOOKS_API_KEY=YOUR_KEY`
 
-Next, create a `.env` file at the project root and add your API key in the following format: `GOOGLE_BOOKS_API_KEY=YOUR_KEY`
-
-Now you're ready to run the script like so:
+Now you're ready to run the script. Thanks to [zero-installs](https://yarnpkg.com/features/zero-installs), there's no need for an installation step.
 
 ```shell
 # run with all defaults enabled
@@ -33,6 +29,8 @@ yarn start -query myquery
 # learn about other options
 yarn start -help
 ```
+
+If you plan to contribute to the repository, you may find it helpful to read about [Yarn 2's editor SDKs](https://yarnpkg.com/getting-started/editor-sdks).
 
 ## Motivation
 
