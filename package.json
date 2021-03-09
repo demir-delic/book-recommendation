@@ -4,7 +4,9 @@
   "main": "index.ts",
   "license": "MIT",
   "scripts": {
-    "start": "ts-node index.ts"
+    "start": "ts-node index.ts",
+    "wipeout": "rm .yarnrc.yml && rm yarn.lock && rm .pnp.js && rm -rf .yarn && rm -rf .vscode",
+    "berry": "yarn set version berry && yarn plugin import typescript && yarn install && yarn dlx @yarnpkg/pnpify --sdk vscode"
   },
   "devDependencies": {
     "@types/node": "^14.14.32",
