@@ -3,7 +3,6 @@
 require("dotenv").config();
 const utils = require("./utils");
 const fs = require("fs");
-const https = require("https");
 const terminalImage = require("terminal-image");
 const terminalLink = require("terminal-link");
 const axios = require("axios").default;
@@ -40,37 +39,6 @@ var argv = require("yargs/yargs")(process.argv.slice(2))
   .help("h")
   .alias("h", "help").argv;
 
-async function getRandomWord() {
-  // https://rapidapi.com/dpventures/api/wordsapi
-  const RAPIDAPI_WORDS_API_KEY = process.env.RADIDAPI_WORDS_API_KEY;
-
-  let options = {
-    method: "GET",
-    url: "https://wordsapiv1.p.rapidapi.com/words/",
-    params: { random: "true" },
-    headers: {
-      "x-rapidapi-key": RAPIDAPI_WORDS_API_KEY,
-      "x-rapidapi-host": "wordsapiv1.p.rapidapi.com",
-    },
-  };
-
-  try {
-    const response = await axios.request(options);
-    return response.data.word;
-  } catch (error) {
-    utils.logAxiosError(error);
-  }
-}
-
-const randomWordAfterPromiseIsResolved = (async () => {
-  await getRandomWord();
-})();
-
-if (!argv.query) {
-  var randomWord = utils.randomArrayElement(
-    fs.readFileSync("10000-common-english-words.txt", "utf8").toString().split("\n")
-  );
-}
 const isVolumeDetailOptional = argv.lowdetail ? true : false;
 let hasRetryStarted = false;
 const MAX_API_CALLS = 10;
@@ -79,24 +47,16 @@ let countApiCalls = 0;
 const main = () => {
   ++countApiCalls;
   if (countApiCalls >= MAX_API_CALLS) {
-    console.log("Sorry, we couldn't find a match.");
+    console.log("Sorry, a match could not be found.");
     return 1;
   }
-  const req = https.request(getRequestOptions(randomWord), (res) => {
-    // console.log(`statusCode: ${res.statusCode}`);
-
-    let data = "";
-    res.on("data", (chunk) => {
-      data += chunk;
-    });
-    res.on("end", () => {
-      const parsedData = JSON.parse(data);
-      // console.log(JSON.stringify(parsedData, null, 2));
-
+  getRandomWord().then((word) => {
+    // console.log(word);
+    getBookResults(word).then((response) => {
       let volumes = [];
 
       // extract properties used by application
-      parsedData.items.forEach((volume) => {
+      response.data.items.forEach((volume) => {
         if (
           isVolumeDetailOptional ||
           (volume.volumeInfo.description &&
@@ -120,7 +80,6 @@ const main = () => {
             hasRetryStarted = true;
           }
           process.stdout.write(".");
-          req.end();
           main();
         } else {
           inquirer
@@ -136,17 +95,16 @@ const main = () => {
                 return 1;
               } else {
                 console.log("Searching...");
-                req.end();
                 main();
               }
             })
             .catch((error) => {
               if (error.isTtyError) {
                 // Prompt couldn't be rendered in the current environment
-                console.error(error);
+                console.error("Inquirer Prompt TTY Error", error);
               } else {
                 // Something else went wrong
-                console.error("not ttyerror", error);
+                console.error("Inquirer Prompt Error", error);
               }
             });
         }
@@ -157,15 +115,31 @@ const main = () => {
       }
     });
   });
-
-  req.on("error", (error) => {
-    console.error(error);
-  });
-
-  req.end();
 };
 
-function getRequestOptions(word) {
+const getRandomWord = async () => {
+  // https://rapidapi.com/dpventures/api/wordsapi
+  const RAPIDAPI_WORDS_API_KEY = process.env.RADIDAPI_WORDS_API_KEY;
+
+  let options = {
+    method: "GET",
+    url: "https://wordsapiv1.p.rapidapi.com/words/",
+    params: { random: "true" },
+    headers: {
+      "x-rapidapi-key": RAPIDAPI_WORDS_API_KEY,
+      "x-rapidapi-host": "wordsapiv1.p.rapidapi.com",
+    },
+  };
+
+  try {
+    const response = await axios.request(options);
+    return response.data.word;
+  } catch (error) {
+    utils.logAxiosError(error);
+  }
+};
+
+const getBookResults = async (word) => {
   const GOOGLE_BOOKS_API_KEY = process.env.GOOGLE_BOOKS_API_KEY;
   const BASE_URL = "https://www.googleapis.com/books/v1/volumes";
   const chosenWord = argv.query || word;
@@ -188,13 +162,18 @@ function getRequestOptions(word) {
 
   const path = `${BASE_URL}?${query}key=${GOOGLE_BOOKS_API_KEY}`;
 
-  return {
-    hostname: "googleapis.com",
-    port: 443,
-    path: path,
+  let options = {
     method: "GET",
+    url: path,
   };
-}
+
+  try {
+    const response = await axios.request(options);
+    return response;
+  } catch (error) {
+    utils.logAxiosError(error);
+  }
+};
 
 const printOutput = (volume) => {
   console.log(
