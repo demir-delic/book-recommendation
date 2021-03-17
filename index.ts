@@ -13,14 +13,14 @@ const inquirer = require("inquirer");
 var argv = require("yargs/yargs")(process.argv.slice(2))
   .usage("Usage: npx ts-node $0 <command> [options]")
   .options({
+    d: {
+      alias: "debug",
+      description: "Display detailed errors and debugging information",
+      type: "boolean",
+    },
     l: {
       alias: "lowdetail",
       description: "Don't require a recommended book to include a description and download link",
-      type: "boolean",
-    },
-    n: {
-      alias: "noimage",
-      description: "Don't display a recommended book's cover image",
       type: "boolean",
     },
     q: {
@@ -38,6 +38,12 @@ var argv = require("yargs/yargs")(process.argv.slice(2))
   })
   .help("h")
   .alias("h", "help").argv;
+
+if (!argv.query) {
+  var randomWord = utils.randomArrayElement(
+    fs.readFileSync("10000-common-english-words.txt", "utf8").toString().split("\n")
+  );
+}
 
 const isVolumeDetailOptional = argv.lowdetail ? true : false;
 let hasRetryStarted = false;
@@ -135,7 +141,7 @@ const getRandomWord = async () => {
     const response = await axios.request(options);
     return response.data.word;
   } catch (error) {
-    utils.logAxiosError(error);
+    utils.logAxiosError(error, argv.debug);
   }
 };
 
@@ -171,7 +177,7 @@ const getBookResults = async (word) => {
     const response = await axios.request(options);
     return response;
   } catch (error) {
-    utils.logAxiosError(error);
+    utils.logAxiosError(error, argv.debug);
   }
 };
 
@@ -188,12 +194,10 @@ const printOutput = (volume) => {
     }
 `
   );
-  if (!argv.noimage) {
-    (async () => {
-      const body = await got(volume.image).buffer();
-      console.log(await terminalImage.buffer(body, { width: "30%", height: "30%" }));
-    })();
-  }
+  (async () => {
+    const body = await got(volume.image).buffer();
+    console.log(await terminalImage.buffer(body, { width: "30%", height: "30%" }));
+  })();
 };
 
 main();

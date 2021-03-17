@@ -1,3 +1,5 @@
+const chalk2 = require("chalk");
+
 const randomArrayElement = <T>(array: T[]): T => {
   return array[Math.floor(Math.random() * array.length)];
 };
@@ -13,23 +15,33 @@ const removeEmptyProps = (volumes: Array<Object>) => {
   });
 };
 
-const logAxiosError = (error) => {
-  if (error.response) {
-    // The request was made and the server responded with a status code
-    // that falls out of the range of 2xx
-    console.log(error.response.data);
-    console.log(error.response.status);
-    console.log(error.response.headers);
-  } else if (error.request) {
-    // The request was made but no response was received
-    // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-    // http.ClientRequest in node.js
-    console.log(error.request);
+const logAxiosError = (error, detailedError) => {
+  if (detailedError) {
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.log(error.response.data);
+      console.log(error.response.status);
+      console.log(error.response.headers);
+    } else if (error.request) {
+      // The request was made but no response was received
+      // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+      // http.ClientRequest in node.js
+      console.log(error.request);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.log("Error", error.message);
+    }
+    console.log(error.config);
   } else {
-    // Something happened in setting up the request that triggered an Error
-    console.log("Error", error.message);
+    console.log(
+      chalk2.red(
+        "An API request error has occurred. There may be a problem with your API keys or your internet connection.",
+        "\nTo display a detailed error message, rerun the script with the -debug flag."
+      )
+    );
   }
-  console.log(error.config);
+  process.exit();
 };
 
 module.exports = { randomArrayElement, removeEmptyProps, logAxiosError };
