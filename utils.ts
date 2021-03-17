@@ -1,0 +1,35 @@
+const randomArrayElement = <T>(array: T[]): T => {
+  return array[Math.floor(Math.random() * array.length)];
+};
+
+// remove properties with no value
+const removeEmptyProps = (volumes: Array<Object>) => {
+  volumes.forEach((volume) => {
+    for (const [prop, value] of Object.entries(volume)) {
+      if (value === undefined) {
+        delete volume[prop];
+      }
+    }
+  });
+};
+
+const logAxiosError = (error) => {
+  if (error.response) {
+    // The request was made and the server responded with a status code
+    // that falls out of the range of 2xx
+    console.log(error.response.data);
+    console.log(error.response.status);
+    console.log(error.response.headers);
+  } else if (error.request) {
+    // The request was made but no response was received
+    // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+    // http.ClientRequest in node.js
+    console.log(error.request);
+  } else {
+    // Something happened in setting up the request that triggered an Error
+    console.log("Error", error.message);
+  }
+  console.log(error.config);
+};
+
+module.exports = { randomArrayElement, removeEmptyProps, logAxiosError };

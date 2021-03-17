@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 
 require("dotenv").config();
+const utils = require("./utils");
 const fs = require("fs");
 const https = require("https");
 const terminalImage = require("terminal-image");
 const terminalLink = require("terminal-link");
+const axios = require("axios").default;
 const got = require("got");
 const chalk = require("chalk");
 const inquirer = require("inquirer");
@@ -38,18 +40,41 @@ var argv = require("yargs/yargs")(process.argv.slice(2))
   .help("h")
   .alias("h", "help").argv;
 
-if (!argv.query) {
-  var wordList = fs.readFileSync("10000-common-english-words.txt", "utf8").toString().split("\n");
+async function getRandomWord() {
+  // https://rapidapi.com/dpventures/api/wordsapi
+  const RAPIDAPI_WORDS_API_KEY = process.env.RADIDAPI_WORDS_API_KEY;
+
+  let options = {
+    method: "GET",
+    url: "https://wordsapiv1.p.rapidapi.com/words/",
+    params: { random: "true" },
+    headers: {
+      "x-rapidapi-key": RAPIDAPI_WORDS_API_KEY,
+      "x-rapidapi-host": "wordsapiv1.p.rapidapi.com",
+    },
+  };
+
+  try {
+    const response = await axios.request(options);
+    return response.data.word;
+  } catch (error) {
+    utils.logAxiosError(error);
+  }
 }
-// console.log(wordList);
+
+const randomWordAfterPromiseIsResolved = (async () => {
+  await getRandomWord();
+})();
+
+if (!argv.query) {
+  var randomWord = utils.randomArrayElement(
+    fs.readFileSync("10000-common-english-words.txt", "utf8").toString().split("\n")
+  );
+}
 const isVolumeDetailOptional = argv.lowdetail ? true : false;
 let hasRetryStarted = false;
 const MAX_API_CALLS = 10;
 let countApiCalls = 0;
-
-const randomArrayElement = <T>(array: T[]): T => {
-  return array[Math.floor(Math.random() * array.length)];
-};
 
 const main = () => {
   ++countApiCalls;
@@ -57,7 +82,7 @@ const main = () => {
     console.log("Sorry, we couldn't find a match.");
     return 1;
   }
-  const req = https.request(getRequestOptions(wordList), (res) => {
+  const req = https.request(getRequestOptions(randomWord), (res) => {
     // console.log(`statusCode: ${res.statusCode}`);
 
     let data = "";
@@ -126,8 +151,8 @@ const main = () => {
             });
         }
       } else {
-        removeEmptyProps(volumes);
-        const chosenVolume = randomArrayElement(volumes);
+        utils.removeEmptyProps(volumes);
+        const chosenVolume = utils.randomArrayElement(volumes);
         printOutput(chosenVolume);
       }
     });
@@ -140,10 +165,10 @@ const main = () => {
   req.end();
 };
 
-function getRequestOptions(wList) {
+function getRequestOptions(word) {
   const GOOGLE_BOOKS_API_KEY = process.env.GOOGLE_BOOKS_API_KEY;
   const BASE_URL = "https://www.googleapis.com/books/v1/volumes";
-  const chosenWord = argv.query || randomArrayElement(wList);
+  const chosenWord = argv.query || word;
 
   const queryParams = {
     // filter: "full",
@@ -162,7 +187,6 @@ function getRequestOptions(wList) {
   }
 
   const path = `${BASE_URL}?${query}key=${GOOGLE_BOOKS_API_KEY}`;
-  // console.log("request path: " + path);
 
   return {
     hostname: "googleapis.com",
@@ -171,17 +195,6 @@ function getRequestOptions(wList) {
     method: "GET",
   };
 }
-
-// remove properties with no value
-const removeEmptyProps = (volumes: Array<Object>) => {
-  volumes.forEach((volume) => {
-    for (const [prop, value] of Object.entries(volume)) {
-      if (value === undefined) {
-        delete volume[prop];
-      }
-    }
-  });
-};
 
 const printOutput = (volume) => {
   console.log(
