@@ -15,8 +15,8 @@ const removeEmptyProps = (volumes: Array<Object>) => {
   });
 };
 
-const logAxiosError = (error, detailedError) => {
-  if (detailedError) {
+const logAxiosError = (error, isDebugModeEnabled) => {
+  if (isDebugModeEnabled) {
     if (error.response) {
       // The request was made and the server responded with a status code
       // that falls out of the range of 2xx
@@ -37,7 +37,7 @@ const logAxiosError = (error, detailedError) => {
     console.log(
       chalk2.red(
         "An API request error has occurred. There may be a problem with your API keys or your internet connection.",
-        "\nTo display a detailed error message, rerun the script with the -debug flag."
+        "\nTo display a detailed error message, run this script with the -debug flag."
       )
     );
   }
