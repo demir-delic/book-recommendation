@@ -11,7 +11,7 @@ import chalk from "chalk";
 import inquirer from "inquirer";
 
 var argv = require("yargs/yargs")(process.argv.slice(2))
-  .usage("Usage: npx ts-node $0 <command> [options]")
+  .usage("Usage: yarn start [options]")
   .options({
     d: {
       alias: "debug",
@@ -19,7 +19,12 @@ var argv = require("yargs/yargs")(process.argv.slice(2))
       type: "boolean",
     },
     l: {
-      alias: "lowdetail",
+      alias: "local",
+      description: "Use local word list file instead of random words API",
+      type: "boolean",
+    },
+    n: {
+      alias: "nodetail",
       description: "Don't require a recommended book to include a description and download link",
       type: "boolean",
     },
@@ -39,13 +44,11 @@ var argv = require("yargs/yargs")(process.argv.slice(2))
   .help("h")
   .alias("h", "help").argv;
 
-if (!argv.query) {
-  var randomWord = utils.randomArrayElement(
-    fs.readFileSync("10000-common-english-words.txt", "utf8").toString().split("\n")
-  );
-}
-
-const isVolumeDetailOptional = argv.lowdetail ? true : false;
+const userSuppliedWord = argv.query;
+const isVolumeDetailOptional = argv.nodetail ? true : false;
+const isWordsApiEnabled = argv.local ? true : false;
+const isAutomaticRetryEnabled = argv.retry ? true : false;
+const isDebugModeEnabled = argv.debug ? true : false;
 let hasRetryStarted = false;
 const MAX_API_CALLS = 10;
 let countApiCalls = 0;
@@ -56,7 +59,7 @@ const main = () => {
     console.log("Sorry, a match could not be found.");
     return 1;
   }
-  getRandomWord().then((word) => {
+  getWord().then((word) => {
     // console.log(word);
     getBookResults(word).then((response) => {
       let volumes = [];
@@ -80,7 +83,7 @@ const main = () => {
       });
 
       if (!volumes?.length) {
-        if (argv.retry) {
+        if (isAutomaticRetryEnabled) {
           if (!hasRetryStarted) {
             process.stdout.write("Searching");
             hasRetryStarted = true;
@@ -92,7 +95,7 @@ const main = () => {
             .prompt([
               {
                 type: "input",
-                message: "No matches were found. Search again? (y/n)",
+                message: "\nNo matches were found. Search again? (y/n)",
                 name: "search_again",
               },
             ])
@@ -106,10 +109,10 @@ const main = () => {
             })
             .catch((error) => {
               if (error.isTtyError) {
-                // Prompt couldn't be rendered in the current environment
+                // prompt couldn't be rendered in the current environment
                 console.error("Inquirer Prompt TTY Error", error);
               } else {
-                // Something else went wrong
+                // something else went wrong
                 console.error("Inquirer Prompt Error", error);
               }
             });
@@ -123,7 +126,7 @@ const main = () => {
   });
 };
 
-const getRandomWord = async () => {
+const getRandomWordFromApi = async () => {
   // https://rapidapi.com/dpventures/api/wordsapi
   const RAPIDAPI_WORDS_API_KEY = process.env.RADIDAPI_WORDS_API_KEY;
   const url = "https://wordsapiv1.p.rapidapi.com/words/";
@@ -140,7 +143,20 @@ const getRandomWord = async () => {
     const response = await axios.get(url, options);
     return response.data.word;
   } catch (error) {
-    utils.logAxiosError(error, argv.debug);
+    utils.logAxiosError(error, isDebugModeEnabled);
+  }
+};
+
+const getWord = async () => {
+  if (userSuppliedWord) {
+    return userSuppliedWord;
+  } else if (isWordsApiEnabled) {
+    var randomWordFromFile = utils.randomArrayElement(
+      fs.readFileSync("10000-common-english-words.txt", "utf8").toString().split("\n")
+    );
+    return randomWordFromFile;
+  } else {
+    return getRandomWordFromApi();
   }
 };
 
@@ -165,15 +181,13 @@ const getBookResults = async (word) => {
     query += `${queryParam}=${value}&`;
   }
 
-  const path = `${BASE_URL}?${query}key=${GOOGLE_BOOKS_API_KEY}`;
-
-  let options = path;
+  const url = `${BASE_URL}?${query}key=${GOOGLE_BOOKS_API_KEY}`;
 
   try {
-    const response = await axios.get(options);
+    const response = await axios.get(url);
     return response;
   } catch (error) {
-    utils.logAxiosError(error, argv.debug);
+    utils.logAxiosError(error, isDebugModeEnabled);
   }
 };
 
