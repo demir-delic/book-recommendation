@@ -1,11 +1,11 @@
-const chalk2 = require("chalk");
+import chalk from "chalk";
 
-const randomArrayElement = <T>(array: T[]): T => {
+export const randomArrayElement = <T>(array: T[]): T => {
   return array[Math.floor(Math.random() * array.length)];
 };
 
 // remove properties with no value
-const removeEmptyProps = (volumes: Array<Object>) => {
+export const removeEmptyProps = (volumes: Array<Object>) => {
   volumes.forEach((volume) => {
     for (const [prop, value] of Object.entries(volume)) {
       if (value === undefined) {
@@ -15,7 +15,7 @@ const removeEmptyProps = (volumes: Array<Object>) => {
   });
 };
 
-const logAxiosError = (error, detailedError) => {
+export const logAxiosError = (error, detailedError) => {
   if (detailedError) {
     if (error.response) {
       // The request was made and the server responded with a status code
@@ -35,7 +35,7 @@ const logAxiosError = (error, detailedError) => {
     console.log(error.config);
   } else {
     console.log(
-      chalk2.red(
+      chalk.red(
         "An API request error has occurred. There may be a problem with your API keys or your internet connection.",
         "\nTo display a detailed error message, rerun the script with the -debug flag."
       )
@@ -43,5 +43,3 @@ const logAxiosError = (error, detailedError) => {
   }
   process.exit();
 };
-
-module.exports = { randomArrayElement, removeEmptyProps, logAxiosError };

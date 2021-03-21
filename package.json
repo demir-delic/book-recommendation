@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.ts",
   "license": "MIT",
+  "type": "module",
   "scripts": {
     "start": "ts-node index.ts",
     "wipeout": "rm .yarnrc.yml && rm yarn.lock && rm .pnp.js && rm -rf .yarn && rm -rf .vscode",

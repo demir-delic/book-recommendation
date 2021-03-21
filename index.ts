@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
-require("dotenv").config();
-const utils = require("./utils");
-const fs = require("fs");
-const terminalImage = require("terminal-image");
-const terminalLink = require("terminal-link");
-const axios = require("axios").default;
-const got = require("got");
-const chalk = require("chalk");
-const inquirer = require("inquirer");
+import { config } from "dotenv";
+import * as utils from "./utils.js";
+import * as fs from "fs";
+import terminalImage from "terminal-image";
+import terminalLink from "terminal-link";
+import axios from "axios";
+import got from "got";
+import chalk from "chalk";
+import inquirer from "inquirer";
 
 var argv = require("yargs/yargs")(process.argv.slice(2))
   .usage("Usage: npx ts-node $0 <command> [options]")
@@ -126,10 +126,9 @@ const main = () => {
 const getRandomWord = async () => {
   // https://rapidapi.com/dpventures/api/wordsapi
   const RAPIDAPI_WORDS_API_KEY = process.env.RADIDAPI_WORDS_API_KEY;
+  const url = "https://wordsapiv1.p.rapidapi.com/words/";
 
   let options = {
-    method: "GET",
-    url: "https://wordsapiv1.p.rapidapi.com/words/",
     params: { random: "true" },
     headers: {
       "x-rapidapi-key": RAPIDAPI_WORDS_API_KEY,
@@ -138,7 +137,7 @@ const getRandomWord = async () => {
   };
 
   try {
-    const response = await axios.request(options);
+    const response = await axios.get(url, options);
     return response.data.word;
   } catch (error) {
     utils.logAxiosError(error, argv.debug);
@@ -168,13 +167,10 @@ const getBookResults = async (word) => {
 
   const path = `${BASE_URL}?${query}key=${GOOGLE_BOOKS_API_KEY}`;
 
-  let options = {
-    method: "GET",
-    url: path,
-  };
+  let options = path;
 
   try {
-    const response = await axios.request(options);
+    const response = await axios.get(options);
     return response;
   } catch (error) {
     utils.logAxiosError(error, argv.debug);
