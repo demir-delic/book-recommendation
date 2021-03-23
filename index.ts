@@ -46,9 +46,9 @@ var argv = require("yargs/yargs")(process.argv.slice(2))
 
 const userSuppliedWord = argv.query;
 const isVolumeDetailOptional = argv.nodetail ? true : false;
-const isWordsApiEnabled = argv.local ? true : false;
 const isAutomaticRetryEnabled = argv.retry ? true : false;
 const isDebugModeEnabled = argv.debug ? true : false;
+const isWordsApiDisabled = argv.local ? true : false;
 let hasRetryStarted = false;
 const MAX_API_CALLS = 10;
 let countApiCalls = 0;
@@ -128,7 +128,7 @@ const main = () => {
 
 const getRandomWordFromApi = async () => {
   // https://rapidapi.com/dpventures/api/wordsapi
-  const RAPIDAPI_WORDS_API_KEY = process.env.RADIDAPI_WORDS_API_KEY;
+  const RAPIDAPI_WORDS_API_KEY = process.env.RAPIDAPI_WORDS_API_KEY;
   const url = "https://wordsapiv1.p.rapidapi.com/words/";
 
   let options = {
@@ -150,7 +150,7 @@ const getRandomWordFromApi = async () => {
 const getWord = async () => {
   if (userSuppliedWord) {
     return userSuppliedWord;
-  } else if (isWordsApiEnabled) {
+  } else if (isWordsApiDisabled) {
     var randomWordFromFile = utils.randomArrayElement(
       fs.readFileSync("10000-common-english-words.txt", "utf8").toString().split("\n")
     );
