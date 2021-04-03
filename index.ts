@@ -8,47 +8,41 @@ const terminalLink = require("terminal-link");
 const axios = require("axios").default;
 const got = require("got");
 const chalk = require("chalk");
-const inquirer = require("inquirer");
 
 var argv = require("yargs/yargs")(process.argv.slice(2))
   .usage("Usage: yarn start [options]")
   .options({
     d: {
       alias: "debug",
-      description: "Display detailed errors and debugging information",
+      description: "Display detailed errors and debugging information.",
+      type: "boolean",
+    },
+    e: {
+      alias: "expanded",
+      description: "Use expanded word bank from API instead of local word bank.",
       type: "boolean",
     },
     l: {
-      alias: "local",
-      description: "Use local word list file instead of random words API",
-      type: "boolean",
-    },
-    n: {
-      alias: "nodetail",
-      description: "Don't require a recommended book to include a description and download link",
+      alias: "lowdetail",
+      description:
+        "Don't require a recommended book to include a description and download link. Included by default when --query is used.",
       type: "boolean",
     },
     q: {
       alias: "query",
       description:
-        "Specify a word to search for instead having a word picked from a list at random",
+        "Specify a word to search for instead having a word picked from a list at random. Includes --lowdetail by default.",
       type: "string",
       nargs: 1,
-    },
-    r: {
-      alias: "retry",
-      description: "Automatically retry search until a match is found",
-      type: "boolean",
     },
   })
   .help("h")
   .alias("h", "help").argv;
 
 const userSuppliedWord = argv.query;
-const isVolumeDetailOptional = argv.nodetail ? true : false;
-const isAutomaticRetryEnabled = argv.retry ? true : false;
+const isVolumeDetailOptional = argv.lowdetail ? true : false;
 const isDebugModeEnabled = argv.debug ? true : false;
-const isWordsApiDisabled = argv.local ? true : false;
+const isWordsApiEnabled = argv.expanded ? true : false;
 let hasRetryStarted = false;
 const MAX_API_CALLS = 10;
 let countApiCalls = 0;
@@ -56,7 +50,7 @@ let countApiCalls = 0;
 const main = () => {
   ++countApiCalls;
   if (countApiCalls >= MAX_API_CALLS) {
-    console.log("Sorry, a match could not be found.");
+    console.log("\nSorry, a match could not be found.");
     return 1;
   }
   getWord().then((word) => {
@@ -68,6 +62,7 @@ const main = () => {
       response.data.items.forEach((volume) => {
         if (
           isVolumeDetailOptional ||
+          userSuppliedWord ||
           (volume.volumeInfo.description &&
             (volume.accessInfo.epub.downloadLink || volume.accessInfo.pdf.downloadLink))
         ) {
@@ -83,40 +78,12 @@ const main = () => {
       });
 
       if (!volumes?.length) {
-        if (isAutomaticRetryEnabled) {
-          if (!hasRetryStarted) {
-            process.stdout.write("Searching");
-            hasRetryStarted = true;
-          }
-          process.stdout.write(".");
-          main();
-        } else {
-          inquirer
-            .prompt([
-              {
-                type: "input",
-                message: "\nNo matches were found. Search again? (y/n)",
-                name: "search_again",
-              },
-            ])
-            .then((answer) => {
-              if (answer.search_again === "n" || answer === "no") {
-                return 1;
-              } else {
-                console.log("Searching...");
-                main();
-              }
-            })
-            .catch((error) => {
-              if (error.isTtyError) {
-                // prompt couldn't be rendered in the current environment
-                console.error("Inquirer Prompt TTY Error", error);
-              } else {
-                // something else went wrong
-                console.error("Inquirer Prompt Error", error);
-              }
-            });
+        if (!hasRetryStarted) {
+          process.stdout.write("Searching");
+          hasRetryStarted = true;
         }
+        process.stdout.write(".");
+        main();
       } else {
         utils.removeEmptyProps(volumes);
         const chosenVolume = utils.randomArrayElement(volumes);
@@ -150,7 +117,7 @@ const getRandomWordFromApi = async () => {
 const getWord = async () => {
   if (userSuppliedWord) {
     return userSuppliedWord;
-  } else if (isWordsApiDisabled) {
+  } else if (!isWordsApiEnabled) {
     var randomWordFromFile = utils.randomArrayElement(
       fs.readFileSync("10000-common-english-words.txt", "utf8").toString().split("\n")
     );
@@ -166,12 +133,12 @@ const getBookResults = async (word) => {
   const chosenWord = argv.query || word;
 
   const queryParams = {
-    // filter: "full",
-    printType: "books",
-    projection: "lite",
+    download: "epub",
     langRestrict: "en",
     maxResults: 40,
-    q: chosenWord, // full-text query string
+    printType: "books",
+    projection: "lite",
+    q: encodeURI(chosenWord), // full-text query string
   };
 
   let query = "";
