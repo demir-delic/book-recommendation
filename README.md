@@ -18,7 +18,7 @@ Get random book recommendations from the comfort of your terminal. If you like a
 
 ---
 
-After fulfilling the prerequisites, clone this repository, then open the `.env` file at the project root and replace the text `YOUR_API_KEY` with the corresponding API key(s).
+After fulfilling the prerequisites, clone this repository, then rename the `.env.sample` file at the project root to `.env` and replace the text `YOUR_API_KEY` with the corresponding API key(s).
 
 Now you're ready to run the script. Thanks to [zero-installs](https://yarnpkg.com/features/zero-installs), there's no need for an installation step.
 
