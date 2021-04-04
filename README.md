@@ -18,11 +18,16 @@ Get random book recommendations from the comfort of your terminal. If you like a
 
 ---
 
-After fulfilling the prerequisites, clone this repository, then rename the `.env.sample` file at the project root to `.env` and replace the text `YOUR_API_KEY` with the corresponding API key(s).
+After fulfilling the prerequisites, clone this repository. Next, create an `.env` file at the project root and add your API keys to the file in the following format:
+
+```
+GOOGLE_BOOKS_API_KEY=YOUR_GOOGLE_KEY
+RAPIDAPI_WORDS_API_KEY=YOUR_WORDS_KEY
+```
 
 Now you're ready to run the script. Thanks to [zero-installs](https://yarnpkg.com/features/zero-installs), there's no need for an installation step.
 
-```shell
+```bash
 # get a random book recommendation
 yarn start
 
@@ -33,7 +38,7 @@ yarn start --expanded
 yarn start --lowdetail
 
 # find a random book that contains a query that you specify
-# includes --lowdetail by default in order to provide results for queries that have no downloadable books
+# includes --lowdetail in order to provide results for queries that have no downloadable books
 yarn start --query "my query"
 
 # learn about other options
